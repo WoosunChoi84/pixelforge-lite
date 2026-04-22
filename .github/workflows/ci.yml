@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  install:
+    name: install + import (py${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Smoke-check import and version
+        run: |
+          python -c "import pixelforge_litemodel as pf; \
+            print('version:', pf.__version__); \
+            print('presets:', len(pf.list_presets())); \
+            print('palettes:', len(pf.list_palettes()))"
+
+      - name: Smoke-check convert API
+        run: |
+          python - <<'PY'
+          import numpy as np
+          import pixelforge_litemodel as pf
+          img = np.random.randint(0, 256, (128, 128, 3), dtype=np.uint8)
+          result = pf.PixelArtPipeline(grid_size=(32, 32)).convert(img)
+          assert result.image.shape == (32, 32, 3)
+          assert len(result.palette) > 0
+          print("convert OK:", result.image.shape, "palette:", len(result.palette))
+          PY

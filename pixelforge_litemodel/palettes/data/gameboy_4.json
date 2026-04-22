@@ -1,0 +1,10 @@
+{
+  "name": "gameboy_4",
+  "description": "Game Boy original 4-color monochrome green palette",
+  "colors": [
+    [15, 56, 15],
+    [48, 98, 48],
+    [139, 172, 15],
+    [155, 188, 15]
+  ]
+}
